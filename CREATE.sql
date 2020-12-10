@@ -42,7 +42,7 @@ CREATE TABLE tag (
     name VARCHAR(20) PRIMARY KEY
 );
 
-CREATE TABLE user (
+CREATE TABLE public.user (
     id SERIAL PRIMARY KEY,
     name VARCHAR(20) NOT NULL,
     password PASSWD NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE preset_group (
     owner SERIAL NOT NULL,
     game VARCHAR(20),
     is_public BOOLEAN NOT NULL,
-        FOREIGN KEY (owner) REFERENCES user(id),
+        FOREIGN KEY (owner) REFERENCES public.user(id),
         FOREIGN KEY (game) REFERENCES game(name)
 );
 
@@ -69,71 +69,72 @@ CREATE TABLE preset (
     author SERIAL NOT NULL,
     code TEXT NOT NULL,
     is_yanked BOOLEAN NOT NULL,
+    date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
         FOREIGN KEY (pg_id) REFERENCES preset_group(id),
-        FOREIGN KEY (author) REFERENCES user(id),
+        FOREIGN KEY (author) REFERENCES public.user(id),
         PRIMARY KEY (version, pg_id)
 );
 
-CREATE TABLE message (
+CREATE TABLE public.message (
     index SERIAL PRIMARY KEY,
     author SERIAL NOT NULL,
     pg_id SERIAL NOT NULL,
     is_deleted BOOLEAN NOT NULL,
-    text VARCHAR(2000) NOT NULL,
+    text VARCHAR(2000) NOT NULL
 );
 
 CREATE TABLE notification (
     index SERIAL PRIMARY KEY,
-    user SERIAL NOT NULL,
+    userid SERIAL NOT NULL, --user became userid
     text VARCHAR(256) NOT NULL,
     is_read BOOLEAN NOT NULL,
-        FOREIGN KEY (user) REFERENCES user(id)
+        FOREIGN KEY (userid) REFERENCES public.user(id)
 );
 
 CREATE TABLE friend_with (
-    user SERIAL,
+    userid SERIAL, --user became userid
     friend SERIAL,
     request_accepted BOOLEAN NOT NULL,
-        FOREIGN KEY (user) REFERENCES user(id),
-        FOREIGN KEY (friend) REFERENCES user(id),
-        PRIMARY KEY (user, friend)
+        FOREIGN KEY (userid) REFERENCES public.user(id),
+        FOREIGN KEY (friend) REFERENCES public.user(id),
+        PRIMARY KEY (userid, friend)
 );
 
 CREATE TABLE u_owns_s (
-    user SERIAL,
+    userid SERIAL, --user became userid
     game VARCHAR(20),
     install_path VARCHAR(256) NOT NULL,
-        FOREIGN KEY (user) REFERENCES user(id),
+        FOREIGN KEY (userid) REFERENCES public.user(id),
         FOREIGN KEY (game) REFERENCES game(name),
-        PRIMARY KEY (user, game)
+        PRIMARY KEY (userid, game)
 );
 
 CREATE TABLE subscribed_to (
-    user SERIAL,
+    userid SERIAL, --user became userid
     pg_id SERIAL,
     download_prereleases BOOLEAN NOT NULL,
-        FOREIGN KEY (user) REFERENCES user(id),
+        FOREIGN KEY (userid) REFERENCES public.user(id),
         FOREIGN KEY (pg_id) REFERENCES preset_group(id),
-        PRIMARY KEY (user, pg_id)
+        PRIMARY KEY (userid, pg_id)
 );
 
 CREATE TABLE reads (
-    user SERIAL,
+    userid SERIAL, --user became userid
     m_index SERIAL NOT NULL,
     pg_id SERIAL,
-        FOREIGN KEY (user) REFERENCES user(id),
+        FOREIGN KEY (userid) REFERENCES public.user(id),
         FOREIGN KEY (pg_id) REFERENCES preset_group(id),
-        FOREIGN KEY (m_index) REFERENCES message(id),
-        PRIMARY KEY (user, pg_id)
+        FOREIGN KEY (m_index) REFERENCES message(index),
+        PRIMARY KEY (userid, pg_id)
 );
 
 CREATE TABLE u_own_g (
-    user SERIAL,
+    userid SERIAL, --user became userid
     game VARCHAR(20),
     install_path VARCHAR(1024),
-        FOREIGN KEY (user) REFERENCES user(id),
+        FOREIGN KEY (userid) REFERENCES public.user(id),
         FOREIGN KEY (game) REFERENCES game(name),
-        PRIMARY KEY (user, game)
+        PRIMARY KEY (userid, game)
 );
 
 CREATE TABLE pg_contains_t (
@@ -156,8 +157,7 @@ CREATE TABLE interacts_with (
     p_version VARCHAR(20),
     pg_id SERIAL,
     setting SERIAL,
-        FOREIGN KEY (p_version) REFERENCES preset(version),
-        FOREIGN KEY (pg_id) REFERENCES preset_group(id),
+        FOREIGN KEY (p_version, pg_id) REFERENCES preset(version, pg_id),
         FOREIGN KEY (setting) REFERENCES setting(id),
         PRIMARY KEY (p_version, pg_id, setting)
 );
@@ -168,8 +168,7 @@ CREATE TABLE translated_in (
     pg_id SERIAL,
     description VARCHAR(256) NOT NULL,
         FOREIGN KEY (language) REFERENCES language(code),
-        FOREIGN KEY (p_version) REFERENCES preset(version),
-        FOREIGN KEY (pg_id) REFERENCES preset_group(id),
+        FOREIGN KEY (p_version, pg_id) REFERENCES preset(version, pg_id),
         PRIMARY KEY (language, p_version, pg_id)
 );
 
@@ -178,7 +177,14 @@ CREATE TABLE works_on (
     p_version VARCHAR(20),
     pg_id SERIAL,
         FOREIGN KEY (setup) REFERENCES setup(name),
-        FOREIGN KEY (p_version) REFERENCES preset(version),
-        FOREIGN KEY (pg_id) REFERENCES preset_group(id),
+        FOREIGN KEY (p_version, pg_id) REFERENCES preset(version, pg_id),
         PRIMARY KEY (setup, p_version, pg_id)
+);
+
+CREATE TABLE launches_with (
+    game VARCHAR(20),
+    pg_id SERIAL,
+        FOREIGN KEY (game) REFERENCES game(name),
+        FOREIGN KEY (pg_id) REFERENCES preset_group(id),
+        PRIMARY KEY (game, pg_id)
 );
