@@ -57,10 +57,8 @@ CREATE TABLE preset_group (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     owner SERIAL NOT NULL,
-    game VARCHAR(20),
     is_public BOOLEAN NOT NULL,
         FOREIGN KEY (owner) REFERENCES public.user(id),
-        FOREIGN KEY (game) REFERENCES game(name)
 );
 
 CREATE TABLE preset (
