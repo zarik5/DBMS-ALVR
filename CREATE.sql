@@ -18,7 +18,7 @@ CREATE TABLE language (
 );
 
 CREATE TABLE game (
-    name VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(60) PRIMARY KEY,
     description VARCHAR(256) NOT NULL,
     web_page VARCHAR(256) NOT NULL
 );
@@ -128,9 +128,9 @@ CREATE TABLE reads (
         PRIMARY KEY (userid, pg_id)
 );
 
-CREATE TABLE u_own_g (
+CREATE TABLE u_owns_g (
     userid SERIAL, --user became userid
-    game VARCHAR(20),
+    game VARCHAR(60),
     install_path VARCHAR(1024),
         FOREIGN KEY (userid) REFERENCES public.user(id),
         FOREIGN KEY (game) REFERENCES game(name),
@@ -182,7 +182,7 @@ CREATE TABLE works_on (
 );
 
 CREATE TABLE launches_with (
-    game VARCHAR(20),
+    game VARCHAR(60),
     pg_id SERIAL,
         FOREIGN KEY (game) REFERENCES game(name),
         FOREIGN KEY (pg_id) REFERENCES preset_group(id),
