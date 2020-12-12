@@ -8,10 +8,10 @@ CREATE DOMAIN passwd AS VARCHAR(128)
 CREATE DOMAIN email AS VARCHAR(128)
     CONSTRAINT checkemail CHECK (((VALUE) :: text ~* '^[A-Za-z0-9._!]+@[A-Za-z0-9.]+[.][A-Za-z]'::text));
 
-CREATE DOMAIN code AS VARCHAR(64)
+CREATE DOMAIN code AS VARCHAR(4)
     CONSTRAINT checkcode CHECK (((VALUE) :: text ~* '[A-Za-z]{2,3}' ::text));
 
-CREATE DOMAIN version AS VARCHAR(64);
+CREATE DOMAIN version AS VARCHAR(64); -- does not work
 
 --Tables creation
 CREATE TABLE language (
@@ -36,7 +36,7 @@ CREATE TABLE release (
 );
 
 CREATE TABLE setting (
-    id SERIAL PRIMARY KEY,
+    id SERIAL UNIQUE PRIMARY KEY,
     name VARCHAR(256) NOT NULL
 );
 
@@ -45,7 +45,7 @@ CREATE TABLE tag (
 );
 
 CREATE TABLE public.user (
-    id SERIAL PRIMARY KEY,
+    id SERIAL UNIQUE PRIMARY KEY,
     name VARCHAR(20) NOT NULL,
     password PASSWD NOT NULL,
     admin_privileges BOOLEAN NOT NULL,
@@ -56,15 +56,15 @@ CREATE TABLE public.user (
 );
 
 CREATE TABLE preset_group (
-    id SERIAL PRIMARY KEY,
+    id SERIAL UNIQUE PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     owner SERIAL NOT NULL,
     is_public BOOLEAN NOT NULL,
-        FOREIGN KEY (owner) REFERENCES public.user(id),
+        FOREIGN KEY (owner) REFERENCES public.user(id)
 );
 
 CREATE TABLE preset (
-    version VERSION,
+    version version,
     pg_id SERIAL,
     author SERIAL NOT NULL,
     code TEXT NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE preset (
 );
 
 CREATE TABLE public.message (
-    index SERIAL PRIMARY KEY,
+    index SERIAL UNIQUE PRIMARY KEY,
     author SERIAL NOT NULL,
     pg_id SERIAL NOT NULL,
     is_deleted BOOLEAN NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE public.message (
 );
 
 CREATE TABLE notification (
-    index SERIAL PRIMARY KEY,
+    index SERIAL UNIQUE PRIMARY KEY, --won't start from 1 but from 4 (to Nicola, ok for Matteo)
     userid SERIAL NOT NULL, --user became userid
     text VARCHAR(256) NOT NULL,
     is_read BOOLEAN NOT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE r_contains_s (
 );
 
 CREATE TABLE interacts_with (
-    p_version VERSION,
+    p_version version,
     pg_id SERIAL,
     setting SERIAL,
         FOREIGN KEY (p_version, pg_id) REFERENCES preset(version, pg_id),
@@ -163,7 +163,7 @@ CREATE TABLE interacts_with (
 
 CREATE TABLE translated_in (
     language CODE,
-    p_version VERSION,
+    p_version version,
     pg_id SERIAL,
     description VARCHAR(256) NOT NULL,
         FOREIGN KEY (language) REFERENCES language(code),
@@ -173,7 +173,7 @@ CREATE TABLE translated_in (
 
 CREATE TABLE works_on (
     setup VARCHAR(32),
-    p_version VERSION,
+    p_version version,
     pg_id SERIAL,
         FOREIGN KEY (setup) REFERENCES setup(name),
         FOREIGN KEY (p_version, pg_id) REFERENCES preset(version, pg_id),
