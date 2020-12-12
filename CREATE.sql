@@ -3,13 +3,15 @@ CREATE DATABASE alvr OWNER postgres ENCODING = 'UTF8';
 
 --Create new domains
 CREATE DOMAIN passwd AS VARCHAR(128)
-    CONSTRAINT checkpw CHECK (((VALUE) :: text ~* '[A-Za-z0-9.,_%&!?]{10,}'::text));
+    CONSTRAINT checkpw CHECK (((VALUE) :: text ~* '[A-Za-z0-9.,_%&!?]{8,}'::text));
 
 CREATE DOMAIN email AS VARCHAR(128)
     CONSTRAINT checkemail CHECK (((VALUE) :: text ~* '^[A-Za-z0-9._!]+@[A-Za-z0-9.]+[.][A-Za-z]'::text));
 
 CREATE DOMAIN code AS VARCHAR(64)
     CONSTRAINT checkcode CHECK (((VALUE) :: text ~* '[A-Za-z]{2,3}' ::text));
+
+CREATE DOMAIN version AS VARCHAR(64);
 
 --Tables creation
 CREATE TABLE language (
@@ -19,17 +21,17 @@ CREATE TABLE language (
 
 CREATE TABLE game (
     name VARCHAR(60) PRIMARY KEY,
-    description VARCHAR(256) NOT NULL,
+    description VARCHAR(1024) NOT NULL,
     web_page VARCHAR(256) NOT NULL
 );
 
 CREATE TABLE setup (
-    name VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(32) PRIMARY KEY,
     description VARCHAR(256) NOT NULL
 );
 
 CREATE TABLE release (
-    version VARCHAR(20) PRIMARY KEY,
+    version version PRIMARY KEY, --todo: check if valid
     is_yanked BOOLEAN NOT NULL
 );
 
@@ -47,7 +49,7 @@ CREATE TABLE public.user (
     name VARCHAR(20) NOT NULL,
     password PASSWD NOT NULL,
     admin_privileges BOOLEAN NOT NULL,
-    email EMAIL NOT NULL,
+    email EMAIL DEFAULT NULL,
     language CODE NOT NULL,
     is_deleted BOOLEAN NOT NULL,
         FOREIGN KEY (language) REFERENCES language(code)
@@ -62,7 +64,7 @@ CREATE TABLE preset_group (
 );
 
 CREATE TABLE preset (
-    version VARCHAR(20),
+    version VERSION,
     pg_id SERIAL,
     author SERIAL NOT NULL,
     code TEXT NOT NULL,
@@ -100,11 +102,10 @@ CREATE TABLE friend_with (
 
 CREATE TABLE u_owns_s (
     userid SERIAL, --user became userid
-    game VARCHAR(20),
-    install_path VARCHAR(256) NOT NULL,
+    setup VARCHAR(32),
         FOREIGN KEY (userid) REFERENCES public.user(id),
-        FOREIGN KEY (game) REFERENCES game(name),
-        PRIMARY KEY (userid, game)
+        FOREIGN KEY (setup) REFERENCES setup(name),
+        PRIMARY KEY (userid, setup)
 );
 
 CREATE TABLE subscribed_to (
@@ -144,7 +145,7 @@ CREATE TABLE pg_contains_t (
 );
 
 CREATE TABLE r_contains_s (
-    release VARCHAR(20),
+    release VARCHAR(64),
     setting SERIAL,
         FOREIGN KEY (release) REFERENCES release(version),
         FOREIGN KEY (setting) REFERENCES setting(id),
@@ -152,7 +153,7 @@ CREATE TABLE r_contains_s (
 );
 
 CREATE TABLE interacts_with (
-    p_version VARCHAR(20),
+    p_version VERSION,
     pg_id SERIAL,
     setting SERIAL,
         FOREIGN KEY (p_version, pg_id) REFERENCES preset(version, pg_id),
@@ -162,7 +163,7 @@ CREATE TABLE interacts_with (
 
 CREATE TABLE translated_in (
     language CODE,
-    p_version VARCHAR(20),
+    p_version VERSION,
     pg_id SERIAL,
     description VARCHAR(256) NOT NULL,
         FOREIGN KEY (language) REFERENCES language(code),
@@ -171,8 +172,8 @@ CREATE TABLE translated_in (
 );
 
 CREATE TABLE works_on (
-    setup VARCHAR(20),
-    p_version VARCHAR(20),
+    setup VARCHAR(32),
+    p_version VERSION,
     pg_id SERIAL,
         FOREIGN KEY (setup) REFERENCES setup(name),
         FOREIGN KEY (p_version, pg_id) REFERENCES preset(version, pg_id),
