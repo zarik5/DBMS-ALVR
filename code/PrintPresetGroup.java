@@ -12,12 +12,19 @@ public class PrintPresetGroup {
 
         try {
             Class.forName(DRIVER);
-            System.out.printf("Driver %s successfully registered.", DRIVER);
+            System.out.printf("Driver %s successfully registered.\n", DRIVER);
 
         } catch (ClassNotFoundException e) {
             System.out.printf("Failed to register driver %s\n %s", DRIVER, e);
+
+            System.exit(-1);
         }
 
+        // Here we use The try-with-resources Statement.
+        // The try-with-resources statement ensures that each resource is closed at the end of the statement.
+        // So we don't need to close the resource manually.
+        // The only thing we need to do is catch the exception.
+        // link here https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html
         try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
             try (Statement stmt = conn.createStatement()) {
                 try (ResultSet rs = stmt.executeQuery(OurSql)) {
