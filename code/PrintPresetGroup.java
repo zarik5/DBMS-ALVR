@@ -9,6 +9,9 @@ public class PrintPresetGroup {
         String JDBC_PASSWORD = "123456";
         String OurSql = "SELECT id, name, owner, game, is_public FROM preset_group;";
 
+        Connection conn = null;
+        ResultSet rs = null;
+        Statement stmt = null;
 
         try {
             Class.forName(DRIVER);
@@ -20,34 +23,61 @@ public class PrintPresetGroup {
             System.exit(-1);
         }
 
-        // Here we use The try-with-resources Statement.
-        // The try-with-resources statement ensures that each resource is closed at the end of the statement.
-        // So we don't need to close the resource manually.
-        // The only thing we need to do is catch the exception.
-        // link here https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html
-        try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
-            try (Statement stmt = conn.createStatement()) {
-                try (ResultSet rs = stmt.executeQuery(OurSql)) {
-                    while (rs.next()) {
-                        int id = rs.getInt("id");
-                        String name = rs.getString("name");
-                        int owner = rs.getInt("owner");
-                        String game = rs.getString("game");
-                        boolean is_public = rs.getBoolean("is_public");
-                        System.out.printf("%d, %s, %d, %s,", id, name, owner);
-                        System.out.println(is_public);
-                    }
-                }
+        try {
+            conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD);
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(OurSql);
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                int owner = rs.getInt("owner");
+                String game = rs.getString("game");
+                boolean is_public = rs.getBoolean("is_public");
+                System.out.printf("%d, %s, %d, %s,", id, name, owner);
+                System.out.println(is_public);
             }
         } catch (SQLException e) {
             System.out.println("Database access error:");
 
             while (e != null) {
-                System.out.printf("- Message: %s%n", e.getMessage());
-                System.out.printf("- SQL status code: %s%n", e.getSQLState());
-                System.out.printf("- SQL error code: %s%n", e.getErrorCode());
-                System.out.printf("%n");
+                System.out.printf("- Message: %s\n", e.getMessage());
+                System.out.printf("- SQL status code: %s\n", e.getSQLState());
+                System.out.printf("- SQL error code: %s\n", e.getErrorCode());
+                System.out.println();
                 e = e.getNextException();
+            }
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                    System.out.printf("Result set closed successfully.\n");
+                }
+
+                if (stmt != null) {
+                    stmt.close();
+                    System.out.printf("Statement closed successfully.\n");
+                }
+
+                if (conn != null) {
+                    conn.close();
+                    System.out.printf("Connection closed successfully.\n");
+                }
+            } catch (SQLException e) {
+                System.out.println("Database access error:");
+
+                while (e != null) {
+                    System.out.printf("- Message: %s\n", e.getMessage());
+                    System.out.printf("- SQL status code: %s\n", e.getSQLState());
+                    System.out.printf("- SQL error code: %s\n", e.getErrorCode());
+                    System.out.printf("%n");
+                    e = e.getNextException();
+                }
+            } finally {
+                rs = null;
+                stmt = null;
+                conn = null;
+
+                System.out.printf("Resources are released.\n");
             }
         }
 
