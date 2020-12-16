@@ -1,9 +1,9 @@
+-- Dropping eventually existing Database
 DROP DATABASE alvr;
-DROP SCHEMA public CASCADE;
 
--- Database Creation
+-- Database  and Schema Creation
 CREATE DATABASE alvr OWNER postgres ENCODING = 'UTF8';
-CREATE SCHEMA public;
+\c alvr;
 
 --Create new domains
 CREATE DOMAIN lang_code AS VARCHAR(4) NOT NULL DEFAULT 'eng' CONSTRAINT lengthcheck CHECK ((VALUE)::text ~* '[a-z]{2,3}'::text);
@@ -11,27 +11,28 @@ CREATE DOMAIN version AS VARCHAR(64) NOT NULL;
 
 --Tables creation
 CREATE TABLE language (
-    code LANG_CODE UNIQUE PRIMARY KEY,
+    code LANG_CODE PRIMARY KEY,
     display_name VARCHAR(20) NOT NULL
 );
 CREATE TABLE game (
-    name VARCHAR(60) UNIQUE PRIMARY KEY,
+    name VARCHAR(60) PRIMARY KEY,
     description VARCHAR(1024) NOT NULL,
     web_page VARCHAR(256) NOT NULL
 );
 CREATE TABLE setup (
-    name VARCHAR(32) UNIQUE PRIMARY KEY,
+    name VARCHAR(32) PRIMARY KEY,
     description VARCHAR(256) NOT NULL
 );
 CREATE TABLE release (
-    version VERSION UNIQUE PRIMARY KEY,
+    version VERSION PRIMARY KEY,
     is_yanked BOOLEAN NOT NULL
 );
 CREATE TABLE setting (
     id SERIAL UNIQUE PRIMARY KEY,
     name VARCHAR(256) NOT NULL
 );
-CREATE TABLE tag (name VARCHAR(20) UNIQUE PRIMARY KEY);
+CREATE TABLE tag (name VARCHAR(20) PRIMARY KEY);
+
 CREATE TABLE public.user (
     id SERIAL UNIQUE PRIMARY KEY,
     name VARCHAR(20) NOT NULL,
@@ -41,9 +42,8 @@ CREATE TABLE public.user (
     language LANG_CODE,
     is_deleted BOOLEAN NOT NULL,
     FOREIGN KEY (language) REFERENCES language(code),
-    UNIQUE (name, is_deleted),
-    CONSTRAINT pwd_regex CHECK (password::text ~* '[A-Za-z0-9.,_%&!?]{8,}'::text),
-    CONSTRAINT emeil_regex CHECK (email::text ~* '^[A-Za-z0-9._!]+@[A-Za-z0-9.]+[.][A-Za-z]'::text)
+    CONSTRAINT pwd_regex CHECK (password::text ~* '[A-Za-z0-9.,_%&!?]{8,}'::text), -- passwords must be at least 8 characters long
+    CONSTRAINT email_regex CHECK (email::text ~* '^[A-Za-z0-9._!]+@[A-Za-z0-9.]+[.][A-Za-z]'::text) -- characters and template constraints on emails
 );
 CREATE TABLE preset_group (
     id SERIAL UNIQUE PRIMARY KEY,
@@ -68,13 +68,15 @@ CREATE TABLE public.message (
     author SERIAL NOT NULL,
     pg_id SERIAL NOT NULL,
     is_deleted BOOLEAN NOT NULL,
-    text VARCHAR(2000) NOT NULL
+    text VARCHAR(2000) NOT NULL,
+    date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 CREATE TABLE notification (
     index SERIAL UNIQUE PRIMARY KEY,
     userid SERIAL NOT NULL,
     text VARCHAR(256) NOT NULL,
     is_read BOOLEAN NOT NULL,
+    date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (userid) REFERENCES public.user(id)
 );
 CREATE TABLE friend_with (

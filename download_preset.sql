@@ -3,7 +3,7 @@
 -- get user language
 SELECT language AS language_code
 FROM public.user AS u
-WHERE u.name == '<user_name>';
+WHERE u.name = '<user_name>' AND NOT u.is_deleted;
 
 --get preset description languages
 SELECT language AS language_code
@@ -12,7 +12,7 @@ FROM translated_in AS t
 WHERE pg.name = '<preset_name>'
     AND p_version = '<preset_version>';
 
--- select best description language (<language_code>) in the java part (go in order of: user preference, English, any other description language). <language_code> can be NULL if the preset had no descriptions
+-- select best description language (<language_code>) in the java part (go in order of: user preference, English, any other description language). <language_code> cannot be null
 
 -- get result
 SELECT u.name AS author,
@@ -33,7 +33,7 @@ FROM preset AS p
     JOIN public.user AS u ON u.id = p.author
 WHERE pg.name = '<preset_name>'
     AND p.version = '<preset_version>'
-    AND t.language = < language_code >
+    AND (t.language = '<language_code>' OR t.language IS NULL)
 GROUP BY u.name,
     u.is_deleted,
     p.code,
