@@ -1,62 +1,24 @@
--- latest_preset:
+-- Make a search query with one word "<word>" and get the overview information (name, latest version and release date). The results show presets where the word matches exactly a tag or is contained in the preset name or the associated game name. The results are distinct and ordered by date (the most recent first). Yanked presets are not shown as the latest presets. Only public presets are reported.
 
-1) we have the preset_group ID
-2) select from preset preset_group.ID == preset.PG_ID AND is_yanked == FALSE
-3) select max(preset.date)
-4) natural join preset_group.ID == preset.PG_ID
-
-SELECT *
-FROM (
-    SELECT *, MAX(p.date)
-    FROM preset AS p
-    WHERE p.is_yanked = FALSE AND p.pg_id = <pg_id>;
-    GROUP BY *
-)
-JOIN preset_group AS pg ON pg.id = p.pg_id
-WHERE pg.is_public = TRUE;
-
--- pg_from_name:
-
-1) select latest_preset preset_group.name == "<query>"
-2) projection (id, name, is_public, version)
-
-SELECT pg.id, pg.name, pg.is_public, p.version
-FROM (<latest_preset>)
-WHERE pg.name = "<query>";
-
--- pg_from_tag:
-
-1) select pg_contains_t pg_contains_t.tag == "<tag>"
-2) natural join (1).pg_id == latest_preset.id
-3) projection (id, name, is_public, version)
-
-SELECT pg.id, pg.name, pg.is_public, p.version
-FROM (<latest_preset>)
-JOIN pg_contains_t AS c ON c.pg_id = pg.id
-WHERE c.tag = "<query>";
-
--- pg_from_game:
-
-1) select launches_with launches_with.game == "<game>"
-2) natural join (1).pg_id == latest_preset.id
-3) projection (id, name, is_public, version)
-
-SELECT pg.id, pg.name, pg.is_public, p.version
-FROM (<latest_preset>)
-JOIN launches_with AS lw ON lw.pg_id = pg.id
-WHERE lw.game = "<query>";
-
--- search:
-
-1) union pg_from_name, pg_from_tag, pg_from_game
-2) select (1).is_public == TRUE
-3) projection preset_group.name, preset.version
-
-SELECT pg.name, p.version
-FROM (
-    <pg_from_name>
-    UNION
-    <pg_from_tag>
-    UNION
-    <pg_from_game>
-)
+SELECT pg.name,
+    p.version,
+    p.date::date
+FROM preset_group as pg
+    LEFT JOIN pg_contains_t AS c ON c.pg_id = pg.id
+    LEFT JOIN launches_with AS lw ON lw.pg_id = pg.id
+    INNER JOIN (
+        SELECT version,
+            pg_id,
+            MAX(date) AS date
+        FROM preset as p
+        WHERE NOT is_yanked
+        GROUP BY pg_id,
+            version
+    ) AS p ON p.pg_id = pg.id
+WHERE (
+        pg.name LIKE '%<word>%'
+        OR c.tag LIKE '<word>'
+        OR lw.game LIKE '%<word>%'
+    )
+    AND is_public
+ORDER BY p.date DESC;

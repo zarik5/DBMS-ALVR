@@ -10,14 +10,6 @@ for each (setting_name: string, behavior_changed: bool):
     id = id || new_id
     insert r_contsins_s ("<release_version>", id)
 
+------------------------------------------
 
-JSON example:
-
-{
-    "setting1": "value1",
-    "setting2": 123
-}
-
-release version example:
-
-1.2.3-beta.1+nightly.20201211
+-- Insert a new release and information about the associated settings, making sure to handle new settings with the same name
