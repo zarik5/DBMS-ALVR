@@ -1,7 +1,13 @@
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.SQLException;
+import java.sql.DriverManager;
+import java.sql.Date;
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 interface QueryCallback {
     void runQuery(Connection conn, ResultSet rs, Statement stmt) throws SQLException;
@@ -160,7 +166,7 @@ public class Main {
         });
 
         // ---------------------- Download preset query -------------------------------
-        System.out.println("------Download preset query------");
+        System.out.println("\n------Download preset query------");
         var downloadPresetData = new Object() {
             String userName;
             String presetName;
@@ -188,7 +194,7 @@ public class Main {
             Main.execute((conn, rs, stmt) -> {
                 String getPresetLanguages = GET_PRESET_LANGUAGES_TEMPLATE.replace("<preset_name>",
                         downloadPresetData.presetName);
-                getPresetLanguages = GET_PRESET_LANGUAGES_TEMPLATE.replace("<preset_version>",
+                getPresetLanguages = getPresetLanguages.replace("<preset_version>",
                         downloadPresetData.presetVersion);
 
                 rs = stmt.executeQuery(getPresetLanguages);
@@ -209,9 +215,9 @@ public class Main {
             Main.execute((conn, rs, stmt) -> {
                 String downloadPreset = DOWNLOAD_PRESET_TEMPLATE.replace("<preset_name>",
                         downloadPresetData.presetName);
-                downloadPreset = GET_PRESET_LANGUAGES_TEMPLATE.replace("<preset_version>",
+                downloadPreset = downloadPreset.replace("<preset_version>",
                         downloadPresetData.presetVersion);
-                downloadPreset = GET_PRESET_LANGUAGES_TEMPLATE.replace("<language_code>",
+                downloadPreset = downloadPreset.replace("<language_code>",
                         downloadPresetData.chosenLanguageCode);
 
                 rs = stmt.executeQuery(downloadPreset);
@@ -224,13 +230,13 @@ public class Main {
                     Date date = rs.getDate("date");
                     String description = rs.getString("description");
                     String game = rs.getString("game");
-                    Array setups = rs.getArray("setups");
+                    String[] setups = (String[])rs.getArray("setups").getArray();
 
-                    System.out.println("Results:");
+                    System.out.println("Result:");
                     System.out.println(
                             "author\t\tis author deleted\t\tcode\t\tis_yanked\t\tdate\t\tdescription\t\tgame\t\tsetups");
-                    System.out.printf("%s\t\t%b\t\t%s\t\t%b\t\t%s\t\t%s\t\t%s\t\t%s", author, isAuthorDeleted, code,
-                            is_yanked, date.toString(), description, game, setups.toString());
+                    System.out.printf("%s\t\t%b\t\t%s\t\t%b\t\t%s\t\t%s\t\t%s\t\t%s\n", author, isAuthorDeleted, code,
+                            is_yanked, date.toString(), description, game, Arrays.toString(setups));
 
                 } else {
                     System.out.println("No matching preset");

@@ -1,7 +1,7 @@
 -- Dropping eventually existing Database
 DROP DATABASE alvr;
 
--- Database  and Schema Creation
+-- Database creation
 CREATE DATABASE alvr OWNER postgres ENCODING = 'UTF8';
 \c alvr;
 
